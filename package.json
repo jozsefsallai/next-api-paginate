@@ -1,0 +1,34 @@
+{
+  "name": "next-api-paginate",
+  "version": "1.0.0",
+  "description": "Pagination utility for Next.js API routes.",
+  "main": "dist/index.js",
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "npm run lint -- --fix",
+    "build": "rm -rf dist && tsc",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jozsefsallai/next-api-paginate.git"
+  },
+  "keywords": [
+    "nextjs",
+    "pagination"
+  ],
+  "author": "@jozsefsallai",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jozsefsallai/next-api-paginate/issues"
+  },
+  "homepage": "https://github.com/jozsefsallai/next-api-paginate#readme",
+  "devDependencies": {
+    "@types/node": "^16.4.10",
+    "@typescript-eslint/eslint-plugin": "^4.28.5",
+    "@typescript-eslint/parser": "^4.28.5",
+    "eslint": "^7.32.0",
+    "next": "^11.0.1",
+    "typescript": "^4.3.5"
+  }
+}
