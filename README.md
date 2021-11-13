@@ -1,11 +1,12 @@
 # next-api-paginate
 
-A middleware-like HOC for dealing with pagination in Next.js API routes. This
-project was inspired by [express-paginate][express-paginate].
+A middleware-like Higher-order Function for dealing with pagination in Next.js
+API routes. This project was inspired by [express-paginate][express-paginate].
+It supports basic and cursor-based pagination.
 
 ## Getting Started
 
-**1. Install the module:**
+### 1. Install the module
 
 ```sh
 npm i next-api-paginate
@@ -13,10 +14,12 @@ npm i next-api-paginate
 yarn add next-api-paginate
 ```
 
-**2. Wrap your API route in the `withPagination` function:**
+### 2. Wrap your API route in the `withPagination` function
+
+**Basic pagination:**
 
 ```js
-import { withPagination } from 'next-api-paginate';
+import { withPagination } from 'next-api-paginate/basic';
 
 export default withPagination()((req, res) => {
   return res.send(`Page: ${req.query.page}, limit: ${req.query.limit}`);
@@ -44,7 +47,33 @@ export default withPagination({
   // the maximum limit accepted by the API; if someone passes a limit greater
   // than this value then the limit will be this value
   // (defaults to 50)
-  maxLimit: 50
+  maxLimit: 50,
+})((req, res) => {
+  // ... your logic
+});
+```
+
+**Cursor-based pagination:**
+
+```js
+import { withPagination } from 'next-api-paginate/cursor';
+
+export default withPagination()((req, res) => {
+  return res.send(`Cursor: ${req.query.cursor}, limit: ${req.query.limit}`);
+});
+```
+
+Specifying custom options is similar to how you'd do it using the basic method:
+
+```js
+import { withPagination } from 'next-api-paginate';
+
+export default withPagination({
+  // the name of the query parameter used for indicating the current cursor
+  // (defaults to "cursor")
+  cursorQueryParam: 'c',
+
+  // ... every other option is the same
 })((req, res) => {
   // ... your logic
 });
@@ -87,23 +116,28 @@ Will return the current page and limit from the request. These values are
 numbers, or undefined if the query parameters don't exist.
 
 ```js
-import { getPagination } from 'next-api-paginate';
+import { getPagination } from 'next-api-paginate/basic'; // or 'next-api-paginate/cursor'
 
-const route = ((req, res) => {
+const route = (req, res) => {
   // get pagination information when the query params are `page` and `limit`
+  // (returns `cursor` when using cursor-based pagination)
   const { page, limit } = getPagination(req);
 
   // get pagination information when the page query param is `p` but `limit` is
   // default
+  // (the second parameter refers to the name of the cursor query param and
+  // defaults to `cursor`)
   const { page, limit } = getPagination(req, 'p');
 
   // get pagination information when the page query param is `p` and limit is
   // `l`
   const { page, limit } = getPagination(req, 'p', 'l');
-});
+};
 ```
 
 ### `hasPreviousPages`
+
+**\* Not available when using cursor-based pagination.**
 
 Will return true if there are pages before the current request's page number.
 It has the exact same function signature as `getPagination` except it returns a
@@ -112,16 +146,18 @@ boolean.
 ```js
 import { hasPreviousPages } from 'next-api-paginate';
 
-const route = ((req, res) => {
+const route = (req, res) => {
   if (hasPreviousPages(req)) {
     return res.send('There are more pages before this!');
   } else {
     return res.send('This is the first page.');
   }
-});
+};
 ```
 
 ### `hasNextPages`
+
+**\* Not available when using cursor-based pagination.**
 
 Returns a callback that allows you to pass the total page count and check
 whether there are any other pages after the current request's page count. The
@@ -131,7 +167,7 @@ function's parameters are the same as in `getPagination` and `hasPreviousPages`.
 ```js
 import { hasNextPages } from 'next-api-paginate';
 
-const route = ((req, res) => {
+const route = (req, res) => {
   const totalPageCount = 40;
 
   if (hasNextPages(req)(totalPageCount)) {
@@ -139,7 +175,7 @@ const route = ((req, res) => {
   } else {
     return res.send('You have reached the end.');
   }
-});
+};
 ```
 
 ## Practical Example -- Sequelize
@@ -149,13 +185,13 @@ import {
   withPagination,
   getPagination,
   hasPreviousPage,
-  hasNextPage
+  hasNextPage,
 } from 'next-api-paginate';
 import { Post } from '~/db/models/Post';
 
 export default withPagination({
   defaultLimit: 15,
-  maxLimit: 40
+  maxLimit: 40,
 })(async (req, res) => {
   const { page, limit } = getPagination(req);
   const offset = page * limit - limit;
@@ -163,7 +199,7 @@ export default withPagination({
   try {
     const { rows, count } = await Post.findAndCountAll({
       limit,
-      offset
+      offset,
     });
 
     const pageCount = Math.ceil(count / limit);
@@ -177,13 +213,13 @@ export default withPagination({
         pageCount,
         itemCount: count,
         hasPrevious: hasPreviousPage(req),
-        hasNext: hasNextPage(req)(count)
-      }
+        hasNext: hasNextPage(req)(count),
+      },
     });
   } catch (err) {
     console.error(err);
     return res.status(500).json({
-      ok: false
+      ok: false,
     });
   }
 });

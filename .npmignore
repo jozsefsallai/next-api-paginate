@@ -2,4 +2,6 @@ src
 .editorconfig
 .eslintrc.json
 .gitattributes
+.prettierrc.json
 tsconfig.json
+.DS_Store
